@@ -1,26 +1,61 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Magma palette — dark aubergine base, magenta-to-amber accent */
+  --aubergine: #1e0f1e;
+  --plum: #2d1230;
+  --plum-2: #3a1840;
+  --warm-white: #f0e6ec;
+  --mauve: #8a7a8c;
+  --magenta: #c4306b;
+  --amber: #e8862f;
+  --hairline: rgba(240, 230, 236, 0.1);
+
+  --background: var(--aubergine);
+  --foreground: var(--warm-white);
 }
 
 @theme inline {
+  --color-aubergine: var(--aubergine);
+  --color-plum: var(--plum);
+  --color-plum-2: var(--plum-2);
+  --color-warm-white: var(--warm-white);
+  --color-mauve: var(--mauve);
+  --color-magenta: var(--magenta);
+  --color-amber: var(--amber);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-fraunces);
+  --font-body: var(--font-plex-sans);
+  --font-data: var(--font-plex-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), "IBM Plex Sans", Arial, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-display), "Fraunces", Georgia, serif;
+}
+
+.font-data {
+  font-family: var(--font-data), "IBM Plex Mono", monospace;
+}
+
+.gradient-magma {
+  background: linear-gradient(135deg, var(--magenta), var(--amber));
+}
+
+.text-gradient-magma {
+  background: linear-gradient(135deg, var(--magenta), var(--amber));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+::selection {
+  background: var(--magenta);
+  color: var(--warm-white);
 }

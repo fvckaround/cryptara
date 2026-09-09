@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Deposit from "@/models/Deposit";
+import User from "@/models/User";
+import Wallet from "@/models/Wallet";
 import { getSession } from "@/lib/session";
 
 export async function GET() {

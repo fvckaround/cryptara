@@ -1,42 +1,32 @@
-import { NextResponse } from "next/server";
-import { sendEmail } from "@/lib/email";
-import { contactFormTemplate } from "@/lib/emailTemplates";
+import StaticPageLayout from "../components/StaticPageLayout";
+import ContactForm from "../components/ContactForm";
 
-export const maxDuration = 30;
+export const metadata = {
+  title: "Contact — Cryptara Holdings",
+};
 
-const CONTACT_EMAIL = "cryptaraholding@outlook.com";
+export default function ContactPage() {
+  return (
+    <StaticPageLayout
+      title="Contact us"
+      subtitle="Questions about your account, a deposit, or a holding plan — we usually reply within one business day."
+    >
+      <section>
+        <p className="font-body text-sm leading-relaxed text-mauve">
+          You can also reach us directly at{" "}
+          <a
+            href="mailto:cryptaraholding@outlook.com"
+            className="text-amber underline"
+          >
+            cryptaraholding@outlook.com
+          </a>
+          .
+        </p>
+      </section>
 
-export async function POST(request) {
-  try {
-    const { name, email, message } = await request.json();
-
-    if (!name || !email || !message) {
-      return NextResponse.json(
-        { error: "Name, email, and message are required" },
-        { status: 400 }
-      );
-    }
-
-    if (message.length > 5000) {
-      return NextResponse.json(
-        { error: "Message is too long" },
-        { status: 400 }
-      );
-    }
-
-    await sendEmail({
-      to: CONTACT_EMAIL,
-      subject: `Contact form: ${name}`,
-      html: contactFormTemplate(name, email, message),
-      replyTo: email,
-    });
-
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (err) {
-    console.error("Contact form error:", err);
-    return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
-      { status: 500 }
-    );
-  }
+      <section>
+        <ContactForm />
+      </section>
+    </StaticPageLayout>
+  );
 }

@@ -35,6 +35,13 @@ export async function POST(request) {
       );
     }
 
+    if (user.isFrozen) {
+      return NextResponse.json(
+        { error: "This account has been frozen. Contact support for assistance." },
+        { status: 403 }
+      );
+    }
+
     await createSession({
       userId: user._id.toString(),
       email: user.email,

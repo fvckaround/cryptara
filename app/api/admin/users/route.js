@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import Investment from "@/models/Investment";
 import { getSession } from "@/lib/session";
 
 export async function GET() {
@@ -12,14 +13,46 @@ export async function GET() {
 
     await connectDB();
 
-    const users = await User.find({})
-      .select(
-        "fullName email role accountBalance totalInvested activePlan country createdAt"
-      )
-      .sort({ createdAt: -1 })
-      .lean();
+    const [users, earnedAgg] = await Promise.all([
+      User.find({})
+        .select(
+          "fullName email role accountBalance totalInvested activePlan country isFrozen createdAt"
+        )
+        .sort({ createdAt: -1 })
+        .lean(),
+      Investment.aggregate([
+        { $match: { status: "completed" } },
+        {
+          $project: {
+            user: 1,
+            profit: {
+              $multiply: [
+                "$amountUsd",
+                { $divide: ["$dailyRate", 100] },
+                "$termDays",
+              ],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$user",
+            totalEarned: { $sum: "$profit" },
+          },
+        },
+      ]),
+    ]);
 
-    return NextResponse.json({ users }, { status: 200 });
+    const earnedByUser = new Map(
+      earnedAgg.map((entry) => [entry._id.toString(), entry.totalEarned])
+    );
+
+    const usersWithEarnings = users.map((u) => ({
+      ...u,
+      totalEarned: earnedByUser.get(u._id.toString()) || 0,
+    }));
+
+    return NextResponse.json({ users: usersWithEarnings }, { status: 200 });
   } catch (err) {
     console.error("Admin list users error:", err);
     return NextResponse.json(

@@ -34,8 +34,8 @@ export default function DepositForm({ wallets }) {
     }
 
     const amount = Number(amountUsd);
-    if (!amount || amount <= 0) {
-      setError("Enter a valid amount");
+    if (!amount || amount < 50) {
+      setError("Minimum deposit is $50");
       return;
     }
 
@@ -155,13 +155,16 @@ export default function DepositForm({ wallets }) {
         </label>
         <input
           type="number"
-          min="1"
+          min="50"
           step="0.01"
           required
           value={amountUsd}
           onChange={(e) => setAmountUsd(e.target.value)}
           className="mt-2 w-full border border-hairline bg-plum px-3 py-2 font-body text-sm text-warm-white outline-none transition-colors focus:border-magenta"
         />
+        <p className="mt-2 font-body text-xs text-mauve">
+          Minimum deposit: $50
+        </p>
       </div>
 
       <div>

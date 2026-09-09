@@ -29,9 +29,9 @@ export async function POST(request) {
       );
     }
 
-    if (amountUsd < 1) {
+    if (amountUsd < 50) {
       return NextResponse.json(
-        { error: "Amount must be greater than zero" },
+        { error: "Minimum deposit is $50" },
         { status: 400 }
       );
     }
@@ -106,12 +106,12 @@ export async function GET() {
 
     await connectDB();
 
-    const deposits = await Deposit.find({ user: session.userId })
+    const deposit = await Deposit.find({ user: session.userId })
       .populate("wallet", "currency label network")
       .sort({ createdAt: -1 })
       .lean();
 
-    return NextResponse.json({ deposits }, { status: 200 });
+    return NextResponse.json({ deposits: deposit }, { status: 200 });
   } catch (err) {
     console.error("List deposits error:", err);
     return NextResponse.json(

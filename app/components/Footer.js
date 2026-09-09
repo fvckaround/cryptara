@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="border-t border-hairline">
@@ -17,9 +19,21 @@ export default function Footer() {
               Company
             </div>
             <ul className="mt-3 space-y-2 font-body text-sm text-warm-white">
-              <li>About</li>
-              <li>Careers</li>
-              <li>Contact</li>
+              <li>
+                <Link href="/about" className="hover:text-amber">
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link href="/careers" className="hover:text-amber">
+                  Careers
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-amber">
+                  Contact
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
@@ -27,9 +41,21 @@ export default function Footer() {
               Legal
             </div>
             <ul className="mt-3 space-y-2 font-body text-sm text-warm-white">
-              <li>Terms</li>
-              <li>Privacy</li>
-              <li>Risk disclosure</li>
+              <li>
+                <Link href="/terms" className="hover:text-amber">
+                  Terms
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-amber">
+                  Privacy
+                </Link>
+              </li>
+              <li>
+                <Link href="/risk-disclosure" className="hover:text-amber">
+                  Risk disclosure
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
@@ -37,8 +63,16 @@ export default function Footer() {
               Support
             </div>
             <ul className="mt-3 space-y-2 font-body text-sm text-warm-white">
-              <li>Help center</li>
-              <li>Security</li>
+              <li>
+                <Link href="/help" className="hover:text-amber">
+                  Help center
+                </Link>
+              </li>
+              <li>
+                <Link href="/security" className="hover:text-amber">
+                  Security
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

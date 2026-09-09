@@ -5,9 +5,10 @@ import Link from "next/link";
 
 const LINKS = [
   { href: "#offerings", label: "Offerings" },
+  { href: "#markets", label: "Markets" },
   { href: "#security", label: "Security" },
   { href: "#faq", label: "FAQ" },
-  { href: "#trust", label: "About" },
+  { href: "/about", label: "About" },
 ];
 
 export default function Nav() {

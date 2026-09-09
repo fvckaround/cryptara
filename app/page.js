@@ -10,6 +10,7 @@ import TeamSection from "./components/TeamSection";
 import NewsSection from "./components/NewsSection";
 import FAQSection from "./components/FAQSection";
 import RealEstateSection from "./components/RealEstateSection";
+import MarketsSection from "./components/MarketsSection";
 import Reveal from "./components/Reveal";
 
 const STEPS = [
@@ -117,6 +118,10 @@ export default function Home() {
             </div>
           </div>
         </section>
+      </Reveal>
+
+      <Reveal>
+        <MarketsSection />
       </Reveal>
 
       <Reveal>

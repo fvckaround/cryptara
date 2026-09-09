@@ -3,6 +3,11 @@ import connectDB from "@/lib/db";
 import Withdrawal from "@/models/Withdrawal";
 import User from "@/models/User";
 import { getSession } from "@/lib/session";
+import { sendEmail } from "@/lib/email";
+import {
+  withdrawalPendingTemplate,
+  adminNewWithdrawalTemplate,
+} from "@/lib/emailTemplates";
 
 export const maxDuration = 30;
 
@@ -36,6 +41,13 @@ export async function POST(request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    if (user.isFrozen) {
+      return NextResponse.json(
+        { error: "This account is frozen. Contact support for assistance." },
+        { status: 403 }
+      );
+    }
+
     if (user.accountBalance < amountUsd) {
       return NextResponse.json(
         { error: "Withdrawal amount exceeds your available balance" },
@@ -54,6 +66,30 @@ export async function POST(request) {
       currency: currency.toUpperCase(),
       destinationAddress,
     });
+
+    sendEmail({
+      to: user.email,
+      subject: "Withdrawal requested",
+      html: withdrawalPendingTemplate(
+        user.fullName,
+        amountUsd,
+        currency.toUpperCase()
+      ),
+    });
+
+    if (process.env.ADMIN_EMAIL) {
+      sendEmail({
+        to: process.env.ADMIN_EMAIL,
+        subject: "New withdrawal awaiting review",
+        html: adminNewWithdrawalTemplate(
+          user.fullName,
+          user.email,
+          amountUsd,
+          currency.toUpperCase(),
+          destinationAddress
+        ),
+      });
+    }
 
     return NextResponse.json({ withdrawal }, { status: 201 });
   } catch (err) {

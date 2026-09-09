@@ -5,6 +5,11 @@ import Investment from "@/models/Investment";
 import Plan from "@/models/Plan";
 import Notification from "@/models/Notification";
 import { getSession } from "@/lib/session";
+import { sendEmail } from "@/lib/email";
+import {
+  investmentStartedTemplate,
+  adminNewInvestmentTemplate,
+} from "@/lib/emailTemplates";
 
 export const maxDuration = 30;
 
@@ -54,6 +59,13 @@ export async function POST(request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    if (user.isFrozen) {
+      return NextResponse.json(
+        { error: "This account is frozen. Contact support for assistance." },
+        { status: 403 }
+      );
+    }
+
     if (user.accountBalance < amountUsd) {
       return NextResponse.json(
         { error: "Insufficient account balance for this amount" },
@@ -83,6 +95,30 @@ export async function POST(request) {
       type: "investment_started",
       message: `You started the ${plan.name} plan with $${amountUsd.toLocaleString()}.`,
     });
+
+    sendEmail({
+      to: user.email,
+      subject: `You're in the ${plan.name} plan`,
+      html: investmentStartedTemplate(
+        user.fullName,
+        plan.name,
+        amountUsd,
+        plan.termDays
+      ),
+    });
+
+    if (process.env.ADMIN_EMAIL) {
+      sendEmail({
+        to: process.env.ADMIN_EMAIL,
+        subject: "New plan investment",
+        html: adminNewInvestmentTemplate(
+          user.fullName,
+          user.email,
+          plan.name,
+          amountUsd
+        ),
+      });
+    }
 
     return NextResponse.json({ investment }, { status: 201 });
   } catch (err) {

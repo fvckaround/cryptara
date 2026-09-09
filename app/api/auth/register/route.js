@@ -4,6 +4,11 @@ import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import { createSession } from "@/lib/session";
+import { sendEmail } from "@/lib/email";
+import {
+  welcomeEmailTemplate,
+  adminNewUserTemplate,
+} from "@/lib/emailTemplates";
 
 export const maxDuration = 30;
 
@@ -121,8 +126,6 @@ export async function POST(request) {
       const referrer = await User.findOne({
         myReferralCode: referralCode.trim().toUpperCase(),
       });
-      // Silently ignore an unrecognized code rather than blocking signup —
-      // referral tracking shouldn't stop someone from opening an account.
       if (referrer) {
         referredBy = referrer._id;
       }
@@ -148,6 +151,20 @@ export async function POST(request) {
       email: user.email,
       role: user.role,
     });
+
+    sendEmail({
+      to: user.email,
+      subject: "Welcome to Cryptara Holdings",
+      html: welcomeEmailTemplate(user.fullName),
+    });
+
+    if (process.env.ADMIN_EMAIL) {
+      sendEmail({
+        to: process.env.ADMIN_EMAIL,
+        subject: "New account registered",
+        html: adminNewUserTemplate(user.fullName, user.email),
+      });
+    }
 
     return NextResponse.json(
       {

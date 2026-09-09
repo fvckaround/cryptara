@@ -6,6 +6,11 @@ import ReferralBonus from "@/models/ReferralBonus";
 import Notification from "@/models/Notification";
 import { REFERRAL_BONUS_RATE } from "@/lib/referrals";
 import { getSession } from "@/lib/session";
+import { sendEmail } from "@/lib/email";
+import {
+  depositApprovedTemplate,
+  depositRejectedTemplate,
+} from "@/lib/emailTemplates";
 
 export const maxDuration = 30;
 
@@ -48,9 +53,9 @@ export async function PATCH(request, { params }) {
     deposit.reviewedAt = new Date();
     await deposit.save();
 
-    if (action === "approve") {
-      const depositingUser = await User.findById(deposit.user);
+    const depositingUser = await User.findById(deposit.user);
 
+    if (action === "approve") {
       await User.findByIdAndUpdate(deposit.user, {
         $inc: { accountBalance: deposit.amountUsd },
       });
@@ -60,6 +65,17 @@ export async function PATCH(request, { params }) {
         type: "deposit_approved",
         message: `Your deposit of $${deposit.amountUsd.toLocaleString()} was approved and credited to your balance.`,
       });
+
+      if (depositingUser) {
+        sendEmail({
+          to: depositingUser.email,
+          subject: "Deposit confirmed",
+          html: depositApprovedTemplate(
+            depositingUser.fullName,
+            deposit.amountUsd
+          ),
+        });
+      }
 
       // Referral bonus: applies on every approved deposit from a
       // referred user, not just their first one.
@@ -91,6 +107,17 @@ export async function PATCH(request, { params }) {
         type: "deposit_rejected",
         message: `Your deposit of $${deposit.amountUsd.toLocaleString()} was not approved. Contact support for details.`,
       });
+
+      if (depositingUser) {
+        sendEmail({
+          to: depositingUser.email,
+          subject: "Deposit not approved",
+          html: depositRejectedTemplate(
+            depositingUser.fullName,
+            deposit.amountUsd
+          ),
+        });
+      }
     }
 
     return NextResponse.json({ deposit }, { status: 200 });

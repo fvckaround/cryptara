@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
+import Deposit from "@/models/Deposit";
+import Wallet from "@/models/Wallet";
 import User from "@/models/User";
-import Investment from "@/models/Investment";
-import Plan from "@/models/Plan";
-import Notification from "@/models/Notification";
 import { getSession } from "@/lib/session";
+import { sendEmail } from "@/lib/email";
+import {
+  depositPendingTemplate,
+  adminNewDepositTemplate,
+} from "@/lib/emailTemplates";
 
 export const maxDuration = 30;
 
@@ -15,85 +19,77 @@ export async function POST(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { planName, amountUsd } = await request.json();
+    const { walletId, amountUsd, transactionReference } =
+      await request.json();
+
+    if (!walletId || !amountUsd) {
+      return NextResponse.json(
+        { error: "Wallet and amount are required" },
+        { status: 400 }
+      );
+    }
+
+    if (amountUsd < 1) {
+      return NextResponse.json(
+        { error: "Amount must be greater than zero" },
+        { status: 400 }
+      );
+    }
 
     await connectDB();
 
-    const plan = await Plan.findOne({ name: planName, isActive: true });
-    if (!plan) {
-      return NextResponse.json({ error: "Unknown plan" }, { status: 400 });
-    }
-
-    if (typeof amountUsd !== "number" || amountUsd <= 0) {
-      return NextResponse.json(
-        { error: "Enter a valid amount" },
-        { status: 400 }
-      );
-    }
-
-    if (amountUsd < plan.minDeposit) {
-      return NextResponse.json(
-        {
-          error: `Minimum for ${plan.name} is $${plan.minDeposit.toLocaleString()}`,
-        },
-        { status: 400 }
-      );
-    }
-
-    if (plan.maxDeposit && amountUsd > plan.maxDeposit) {
-      return NextResponse.json(
-        {
-          error: `Maximum for ${plan.name} is $${plan.maxDeposit.toLocaleString()}`,
-        },
-        { status: 400 }
-      );
-    }
-
-    const user = await User.findById(session.userId);
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    if (user.isFrozen) {
+    const requestingUser = await User.findById(session.userId).select(
+      "isFrozen fullName email"
+    );
+    if (requestingUser?.isFrozen) {
       return NextResponse.json(
         { error: "This account is frozen. Contact support for assistance." },
         { status: 403 }
       );
     }
 
-    if (user.accountBalance < amountUsd) {
+    const wallet = await Wallet.findById(walletId);
+    if (!wallet || !wallet.isActive) {
       return NextResponse.json(
-        { error: "Insufficient account balance for this amount" },
+        { error: "Selected wallet is not available" },
         { status: 400 }
       );
     }
 
-    const endsAt = new Date();
-    endsAt.setDate(endsAt.getDate() + plan.termDays);
-
-    const investment = await Investment.create({
-      user: user._id,
-      planName: plan.name,
+    const deposit = await Deposit.create({
+      user: session.userId,
+      wallet: wallet._id,
+      currency: wallet.currency,
       amountUsd,
-      dailyRate: plan.dailyRate,
-      termDays: plan.termDays,
-      endsAt,
+      transactionReference: transactionReference || null,
     });
 
-    user.accountBalance -= amountUsd;
-    user.totalInvested += amountUsd;
-    user.activePlan = plan.name;
-    await user.save();
-
-    await Notification.create({
-      user: user._id,
-      type: "investment_started",
-      message: `You started the ${plan.name} plan with $${amountUsd.toLocaleString()}.`,
+    sendEmail({
+      to: requestingUser.email,
+      subject: "Deposit received",
+      html: depositPendingTemplate(
+        requestingUser.fullName,
+        amountUsd,
+        wallet.currency
+      ),
     });
 
-    return NextResponse.json({ investment }, { status: 201 });
+    if (process.env.ADMIN_EMAIL) {
+      sendEmail({
+        to: process.env.ADMIN_EMAIL,
+        subject: "New deposit awaiting review",
+        html: adminNewDepositTemplate(
+          requestingUser.fullName,
+          requestingUser.email,
+          amountUsd,
+          wallet.currency
+        ),
+      });
+    }
+
+    return NextResponse.json({ deposit }, { status: 201 });
   } catch (err) {
-    console.error("Create investment error:", err);
+    console.error("Create deposit error:", err);
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },
       { status: 500 }
@@ -110,13 +106,14 @@ export async function GET() {
 
     await connectDB();
 
-    const investments = await Investment.find({ user: session.userId })
+    const deposits = await Deposit.find({ user: session.userId })
+      .populate("wallet", "currency label network")
       .sort({ createdAt: -1 })
       .lean();
 
-    return NextResponse.json({ investments }, { status: 200 });
+    return NextResponse.json({ deposits }, { status: 200 });
   } catch (err) {
-    console.error("List investments error:", err);
+    console.error("List deposits error:", err);
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },
       { status: 500 }

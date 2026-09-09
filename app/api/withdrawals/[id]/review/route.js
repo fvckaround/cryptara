@@ -4,6 +4,11 @@ import Withdrawal from "@/models/Withdrawal";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
 import { getSession } from "@/lib/session";
+import { sendEmail } from "@/lib/email";
+import {
+  withdrawalApprovedTemplate,
+  withdrawalRejectedTemplate,
+} from "@/lib/emailTemplates";
 
 export const maxDuration = 30;
 
@@ -45,6 +50,8 @@ export async function PATCH(request, { params }) {
     withdrawal.reviewedBy = session.userId;
     withdrawal.reviewedAt = new Date();
 
+    const withdrawingUser = await User.findById(withdrawal.user);
+
     if (action === "reject") {
       withdrawal.rejectionReason = rejectionReason || null;
 
@@ -59,12 +66,35 @@ export async function PATCH(request, { params }) {
         type: "withdrawal_rejected",
         message: `Your withdrawal of $${withdrawal.amountUsd.toLocaleString()} was not approved and has been returned to your balance.`,
       });
+
+      if (withdrawingUser) {
+        sendEmail({
+          to: withdrawingUser.email,
+          subject: "Withdrawal not approved",
+          html: withdrawalRejectedTemplate(
+            withdrawingUser.fullName,
+            withdrawal.amountUsd,
+            rejectionReason
+          ),
+        });
+      }
     } else {
       await Notification.create({
         user: withdrawal.user,
         type: "withdrawal_approved",
         message: `Your withdrawal of $${withdrawal.amountUsd.toLocaleString()} was approved and sent.`,
       });
+
+      if (withdrawingUser) {
+        sendEmail({
+          to: withdrawingUser.email,
+          subject: "Withdrawal approved",
+          html: withdrawalApprovedTemplate(
+            withdrawingUser.fullName,
+            withdrawal.amountUsd
+          ),
+        });
+      }
     }
 
     await withdrawal.save();

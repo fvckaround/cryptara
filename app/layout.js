@@ -20,10 +20,63 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
+const SITE_URL = "https://cryptaraholdings.com";
+
 export const metadata = {
-  title: "Cryptara Holdings",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Cryptara Holdings — Digital Asset Holding Company",
+    template: "%s | Cryptara Holdings",
+  },
   description:
-    "Cryptara Holdings is a digital asset investment firm managing diversified crypto portfolios for long-term holders.",
+    "Cryptara Holdings manages diversified crypto portfolios for long-term holders. Fixed-term holding plans, transparent custody, and clear statements of what you hold.",
+  keywords: [
+    "crypto investment",
+    "digital asset custody",
+    "crypto holding plans",
+    "bitcoin investment",
+    "ethereum investment",
+  ],
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-icon-180.png", sizes: "180x180" }],
+  },
+  openGraph: {
+    title: "Cryptara Holdings — Digital Asset Holding Company",
+    description:
+      "Fixed-term crypto holding plans, transparent custody, and clear statements of what you hold.",
+    url: SITE_URL,
+    siteName: "Cryptara Holdings",
+    images: [
+      {
+        url: "/hero-bg.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Cryptara Holdings",
+      },
+    ],
+    locale: "en_GB",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cryptara Holdings — Digital Asset Holding Company",
+    description:
+      "Fixed-term crypto holding plans, transparent custody, and clear statements of what you hold.",
+    images: ["/hero-bg.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+export const viewport = {
+  themeColor: "#1e0f1e",
 };
 
 export default function RootLayout({ children }) {
@@ -32,7 +85,32 @@ export default function RootLayout({ children }) {
       <body
         className={`${fraunces.variable} ${plexSans.variable} ${plexMono.variable} antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FinancialService",
+              name: "Cryptara Holdings",
+              url: SITE_URL,
+              description:
+                "Digital asset holding company managing diversified crypto portfolios for long-term holders.",
+              areaServed: "Worldwide",
+            }),
+          }}
+        />
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function () {
+                  navigator.serviceWorker.register('/sw.js').catch(function () {});
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

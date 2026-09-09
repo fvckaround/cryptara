@@ -3,6 +3,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import Notification from "@/models/Notification";
 import { createSession } from "@/lib/session";
 import { sendEmail } from "@/lib/email";
 import {
@@ -11,6 +12,8 @@ import {
 } from "@/lib/emailTemplates";
 
 export const maxDuration = 30;
+
+const SIGNUP_BONUS_USD = 10;
 
 function calculateAge(dateOfBirth) {
   const dob = new Date(dateOfBirth);
@@ -144,6 +147,13 @@ export async function POST(request) {
       myReferralCode,
       referredBy,
       termsAcceptedAt: new Date(),
+      accountBalance: SIGNUP_BONUS_USD,
+    });
+
+    await Notification.create({
+      user: user._id,
+      type: "deposit_approved",
+      message: `You received a $${SIGNUP_BONUS_USD} welcome bonus, credited to your account balance.`,
     });
 
     await createSession({
@@ -155,7 +165,7 @@ export async function POST(request) {
     sendEmail({
       to: user.email,
       subject: "Welcome to Cryptara Holdings",
-      html: welcomeEmailTemplate(user.fullName),
+      html: welcomeEmailTemplate(user.fullName, SIGNUP_BONUS_USD),
     });
 
     if (process.env.ADMIN_EMAIL) {

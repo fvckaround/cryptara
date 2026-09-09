@@ -133,7 +133,7 @@ export default function WithdrawalsTable() {
                     <span className="text-mauve">({w.user?.email})</span>
                   </div>
                   <div className="mt-0.5 font-body text-xs text-mauve">
-                    {w.currency} · $
+                    {w.currency} · {w.network} · $
                     {w.amountUsd.toLocaleString("en-US", {
                       minimumFractionDigits: 2,
                     })}{" "}

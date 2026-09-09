@@ -18,11 +18,15 @@ export async function POST(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { amountUsd, currency, destinationAddress } = await request.json();
+    const { amountUsd, currency, network, destinationAddress } =
+      await request.json();
 
-    if (!amountUsd || !currency || !destinationAddress) {
+    if (!amountUsd || !currency || !network || !destinationAddress) {
       return NextResponse.json(
-        { error: "Amount, currency, and destination address are required" },
+        {
+          error:
+            "Amount, currency, network, and destination address are required",
+        },
         { status: 400 }
       );
     }
@@ -64,6 +68,7 @@ export async function POST(request) {
       user: user._id,
       amountUsd,
       currency: currency.toUpperCase(),
+      network,
       destinationAddress,
     });
 

@@ -8,6 +8,7 @@ const CURRENCIES = ["BTC", "ETH", "USDT"];
 export default function WithdrawForm({ accountBalance }) {
   const router = useRouter();
   const [currency, setCurrency] = useState(CURRENCIES[0]);
+  const [network, setNetwork] = useState("");
   const [amountUsd, setAmountUsd] = useState("");
   const [destinationAddress, setDestinationAddress] = useState("");
   const [error, setError] = useState("");
@@ -30,6 +31,11 @@ export default function WithdrawForm({ accountBalance }) {
       return;
     }
 
+    if (!network.trim()) {
+      setError("Enter the network");
+      return;
+    }
+
     if (!destinationAddress.trim()) {
       setError("Enter a destination wallet address");
       return;
@@ -44,6 +50,7 @@ export default function WithdrawForm({ accountBalance }) {
         body: JSON.stringify({
           amountUsd: amount,
           currency,
+          network: network.trim(),
           destinationAddress: destinationAddress.trim(),
         }),
       });
@@ -106,6 +113,20 @@ export default function WithdrawForm({ accountBalance }) {
             </button>
           ))}
         </div>
+      </div>
+
+      <div>
+        <label className="font-data text-xs uppercase tracking-wide text-mauve">
+          Network
+        </label>
+        <input
+          type="text"
+          required
+          value={network}
+          onChange={(e) => setNetwork(e.target.value)}
+          placeholder="e.g. Bitcoin, ERC-20, TRC-20, BEP-20"
+          className="mt-2 w-full border border-hairline bg-plum px-3 py-2 font-body text-sm text-warm-white outline-none transition-colors focus:border-magenta"
+        />
       </div>
 
       <div>

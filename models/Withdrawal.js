@@ -18,6 +18,11 @@ const WithdrawalSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
     },
+    network: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     destinationAddress: {
       type: String,
       required: true,

@@ -4,6 +4,7 @@ import User from "@/models/User";
 import Plan from "@/models/Plan";
 import DashboardNav from "@/app/components/DashboardNav";
 import PlanPicker from "@/app/components/PlanPicker";
+import ActiveInvestments from "@/app/components/ActiveInvestments";
 
 export const metadata = {
   title: "Choose a plan — Cryptara Holdings",
@@ -59,12 +60,17 @@ export default async function InvestPage() {
               shortly.
             </p>
           ) : (
-            <PlanPicker
-              plans={serializedPlans}
-              accountBalance={user?.accountBalance ?? 0}
-              activePlan={user?.activePlan ?? null}
-            />
+            <PlanPicker plans={serializedPlans} />
           )}
+        </div>
+
+        <div className="mt-14 border-t border-hairline pt-8">
+          <h2 className="font-display text-lg text-warm-white">
+            Your active investments
+          </h2>
+          <div className="mt-6">
+            <ActiveInvestments />
+          </div>
         </div>
       </main>
     </div>

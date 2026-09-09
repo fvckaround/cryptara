@@ -1,6 +1,7 @@
 import { Fraunces, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import WhatsAppButton from "./components/WhatsAppButton";
+import InstallButton from "./components/InstallButton";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -102,6 +103,7 @@ export default function RootLayout({ children }) {
         />
         {children}
         <WhatsAppButton />
+        <InstallButton />
         <script
           dangerouslySetInnerHTML={{
             __html: `

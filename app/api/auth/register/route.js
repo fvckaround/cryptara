@@ -3,17 +3,12 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
-import Notification from "@/models/Notification";
-import { createSession } from "@/lib/session";
 import { sendEmail } from "@/lib/email";
-import {
-  welcomeEmailTemplate,
-  adminNewUserTemplate,
-} from "@/lib/emailTemplates";
+import { verificationCodeTemplate } from "@/lib/emailTemplates";
 
 export const maxDuration = 30;
 
-const SIGNUP_BONUS_USD = 10;
+const VERIFICATION_CODE_TTL_MINUTES = 15;
 
 function calculateAge(dateOfBirth) {
   const dob = new Date(dateOfBirth);
@@ -29,7 +24,7 @@ function calculateAge(dateOfBirth) {
   return age;
 }
 
-function randomCode(length = 8) {
+function randomReferralCode(length = 8) {
   return crypto
     .randomBytes(length)
     .toString("base64")
@@ -40,13 +35,17 @@ function randomCode(length = 8) {
 
 async function generateUniqueReferralCode() {
   for (let attempt = 0; attempt < 5; attempt++) {
-    const code = randomCode(8);
+    const code = randomReferralCode(8);
     const existing = await User.findOne({ myReferralCode: code });
     if (!existing) {
       return code;
     }
   }
   throw new Error("Could not generate a unique referral code");
+}
+
+function generateVerificationCode() {
+  return String(crypto.randomInt(100000, 999999));
 }
 
 export async function POST(request) {
@@ -137,6 +136,11 @@ export async function POST(request) {
     const passwordHash = await bcrypt.hash(password, 10);
     const myReferralCode = await generateUniqueReferralCode();
 
+    const verificationCode = generateVerificationCode();
+    const verificationExpires = new Date(
+      Date.now() + VERIFICATION_CODE_TTL_MINUTES * 60 * 1000
+    );
+
     const user = await User.create({
       fullName,
       email: email.toLowerCase(),
@@ -147,44 +151,19 @@ export async function POST(request) {
       myReferralCode,
       referredBy,
       termsAcceptedAt: new Date(),
-      accountBalance: SIGNUP_BONUS_USD,
-    });
-
-    await Notification.create({
-      user: user._id,
-      type: "deposit_approved",
-      message: `You received a $${SIGNUP_BONUS_USD} welcome bonus, credited to your account balance.`,
-    });
-
-    await createSession({
-      userId: user._id.toString(),
-      email: user.email,
-      role: user.role,
+      isVerified: false,
+      emailVerificationCode: verificationCode,
+      emailVerificationExpires: verificationExpires,
     });
 
     sendEmail({
       to: user.email,
-      subject: "Welcome to Cryptara Holdings",
-      html: welcomeEmailTemplate(user.fullName, SIGNUP_BONUS_USD),
+      subject: "Verify your email",
+      html: verificationCodeTemplate(user.fullName, verificationCode),
     });
 
-    if (process.env.ADMIN_EMAIL) {
-      sendEmail({
-        to: process.env.ADMIN_EMAIL,
-        subject: "New account registered",
-        html: adminNewUserTemplate(user.fullName, user.email),
-      });
-    }
-
     return NextResponse.json(
-      {
-        user: {
-          id: user._id.toString(),
-          fullName: user.fullName,
-          email: user.email,
-          role: user.role,
-        },
-      },
+      { requiresVerification: true, email: user.email },
       { status: 201 }
     );
   } catch (err) {

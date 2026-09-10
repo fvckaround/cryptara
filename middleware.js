@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/register"],
+  matcher: [
+    "/dashboard/:path*",
+    "/admin/:path*",
+    "/login",
+    "/register",
+    "/verify-email",
+  ],
 };
 
 function getSecretKey() {
@@ -25,8 +31,12 @@ export async function middleware(request) {
   const { pathname } = request.nextUrl;
   const session = await getVerifiedSession(request);
 
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/verify-email";
   const isProtectedPage = pathname.startsWith("/dashboard");
+  const isAdminPage = pathname.startsWith("/admin");
 
   if (isProtectedPage && !session) {
     const loginUrl = new URL("/login", request.url);
@@ -34,7 +44,20 @@ export async function middleware(request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isAuthPage && session) {
+  if (isAdminPage) {
+    if (!session) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    if (session.role !== "admin") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
+
+  // /verify-email is reachable both logged out (finishing signup) and
+  // logged in — don't redirect it away like /login and /register.
+  if (isAuthPage && session && pathname !== "/verify-email") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

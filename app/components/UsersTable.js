@@ -11,6 +11,7 @@ export default function UsersTable() {
   const [balanceAmount, setBalanceAmount] = useState("");
   const [balanceDirection, setBalanceDirection] = useState("add");
   const [balanceReason, setBalanceReason] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
 
   async function load() {
     try {
@@ -30,8 +31,7 @@ export default function UsersTable() {
     load();
   }, []);
 
-  async function toggleRole(user) {
-    const newRole = user.role === "admin" ? "investor" : "admin";
+  async function makeAdmin(user) {
     setUpdatingId(user._id);
     setError("");
 
@@ -39,7 +39,7 @@ export default function UsersTable() {
       const res = await fetch(`/api/admin/users/${user._id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: newRole }),
+        body: JSON.stringify({ role: "admin" }),
       });
       const data = await res.json();
 
@@ -127,6 +127,33 @@ export default function UsersTable() {
     }
   }
 
+  async function confirmDelete(userId) {
+    setUpdatingId(userId);
+    setError("");
+
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Could not delete account");
+        setUpdatingId(null);
+        setDeletingId(null);
+        return;
+      }
+
+      setDeletingId(null);
+      await load();
+      setUpdatingId(null);
+    } catch (err) {
+      setError("Could not delete account");
+      setUpdatingId(null);
+      setDeletingId(null);
+    }
+  }
+
   if (error) {
     return <p className="font-body text-sm text-[#d9738f]">{error}</p>;
   }
@@ -211,12 +238,21 @@ export default function UsersTable() {
                   >
                     {u.isFrozen ? "Unfreeze" : "Freeze"}
                   </button>
+                  {u.role !== "admin" && (
+                    <button
+                      onClick={() => makeAdmin(u)}
+                      disabled={updatingId === u._id}
+                      className="border border-hairline px-3 py-1.5 font-body text-xs text-warm-white transition-colors hover:border-magenta disabled:opacity-60"
+                    >
+                      Make admin
+                    </button>
+                  )}
                   <button
-                    onClick={() => toggleRole(u)}
+                    onClick={() => setDeletingId(u._id)}
                     disabled={updatingId === u._id}
-                    className="border border-hairline px-3 py-1.5 font-body text-xs text-warm-white transition-colors hover:border-magenta disabled:opacity-60"
+                    className="border border-hairline px-3 py-1.5 font-body text-xs text-[#d9738f] transition-colors hover:border-[#d9738f] disabled:opacity-60"
                   >
-                    {u.role === "admin" ? "Remove admin" : "Make admin"}
+                    Delete account
                   </button>
                 </div>
               </div>
@@ -270,6 +306,32 @@ export default function UsersTable() {
                     </button>
                     <button
                       onClick={() => setBalanceFormId(null)}
+                      className="border border-hairline px-4 py-2 font-body text-xs text-mauve"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {deletingId === u._id && (
+                <div className="mt-4 border border-[#d9738f]/40 bg-plum-2 p-4">
+                  <p className="font-body text-sm text-warm-white">
+                    Permanently delete {u.fullName}&apos;s account? This
+                    cannot be undone.
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => confirmDelete(u._id)}
+                      disabled={updatingId === u._id}
+                      className="border border-[#d9738f] px-4 py-2 font-body text-xs text-[#d9738f] disabled:opacity-60"
+                    >
+                      {updatingId === u._id
+                        ? "Deleting…"
+                        : "Yes, delete permanently"}
+                    </button>
+                    <button
+                      onClick={() => setDeletingId(null)}
                       className="border border-hairline px-4 py-2 font-body text-xs text-mauve"
                     >
                       Cancel

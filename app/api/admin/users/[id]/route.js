@@ -50,3 +50,36 @@ export async function PATCH(request, { params }) {
     );
   }
 }
+
+export async function DELETE(request, { params }) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    if (id === session.userId) {
+      return NextResponse.json(
+        { error: "You can't delete your own account" },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+
+    const user = await User.findByIdAndDelete(id);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (err) {
+    console.error("Delete user error:", err);
+    return NextResponse.json(
+      { error: "Something went wrong. Please try again." },
+      { status: 500 }
+    );
+  }
+}

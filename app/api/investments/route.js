@@ -96,7 +96,7 @@ export async function POST(request) {
       message: `You started the ${plan.name} plan with $${amountUsd.toLocaleString()}.`,
     });
 
-    sendEmail({
+    await sendEmail({
       to: user.email,
       subject: `You're in the ${plan.name} plan`,
       html: investmentStartedTemplate(
@@ -108,7 +108,7 @@ export async function POST(request) {
     });
 
     if (process.env.ADMIN_EMAIL) {
-      sendEmail({
+      await sendEmail({
         to: process.env.ADMIN_EMAIL,
         subject: "New plan investment",
         html: adminNewInvestmentTemplate(

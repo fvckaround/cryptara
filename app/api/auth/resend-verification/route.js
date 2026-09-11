@@ -45,7 +45,7 @@ export async function POST(request) {
     );
     await user.save();
 
-    sendEmail({
+    await sendEmail({
       to: user.email,
       subject: "Your new verification code",
       html: verificationCodeTemplate(user.fullName, verificationCode),

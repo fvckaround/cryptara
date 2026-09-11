@@ -72,7 +72,7 @@ export async function POST(request) {
       destinationAddress,
     });
 
-    sendEmail({
+    await sendEmail({
       to: user.email,
       subject: "Withdrawal requested",
       html: withdrawalPendingTemplate(
@@ -83,7 +83,7 @@ export async function POST(request) {
     });
 
     if (process.env.ADMIN_EMAIL) {
-      sendEmail({
+      await sendEmail({
         to: process.env.ADMIN_EMAIL,
         subject: "New withdrawal awaiting review",
         html: adminNewWithdrawalTemplate(

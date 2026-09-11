@@ -64,7 +64,7 @@ export async function POST(request) {
       transactionReference: transactionReference || null,
     });
 
-    sendEmail({
+    await sendEmail({
       to: requestingUser.email,
       subject: "Deposit received",
       html: depositPendingTemplate(
@@ -75,7 +75,7 @@ export async function POST(request) {
     });
 
     if (process.env.ADMIN_EMAIL) {
-      sendEmail({
+      await sendEmail({
         to: process.env.ADMIN_EMAIL,
         subject: "New deposit awaiting review",
         html: adminNewDepositTemplate(
@@ -106,12 +106,12 @@ export async function GET() {
 
     await connectDB();
 
-    const deposit = await Deposit.find({ user: session.userId })
+    const deposits = await Deposit.find({ user: session.userId })
       .populate("wallet", "currency label network")
       .sort({ createdAt: -1 })
       .lean();
 
-    return NextResponse.json({ deposits: deposit }, { status: 200 });
+    return NextResponse.json({ deposits }, { status: 200 });
   } catch (err) {
     console.error("List deposits error:", err);
     return NextResponse.json(

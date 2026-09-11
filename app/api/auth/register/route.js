@@ -156,7 +156,7 @@ export async function POST(request) {
       emailVerificationExpires: verificationExpires,
     });
 
-    sendEmail({
+    await sendEmail({
       to: user.email,
       subject: "Verify your email",
       html: verificationCodeTemplate(user.fullName, verificationCode),

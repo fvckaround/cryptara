@@ -67,7 +67,7 @@ export async function PATCH(request, { params }) {
       });
 
       if (depositingUser) {
-        sendEmail({
+        await sendEmail({
           to: depositingUser.email,
           subject: "Deposit confirmed",
           html: depositApprovedTemplate(
@@ -109,7 +109,7 @@ export async function PATCH(request, { params }) {
       });
 
       if (depositingUser) {
-        sendEmail({
+        await sendEmail({
           to: depositingUser.email,
           subject: "Deposit not approved",
           html: depositRejectedTemplate(

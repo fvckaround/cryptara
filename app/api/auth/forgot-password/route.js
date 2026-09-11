@@ -42,7 +42,7 @@ export async function POST(request) {
 
       const resetUrl = `${SITE_URL}/reset-password?token=${rawToken}`;
 
-      sendEmail({
+      await sendEmail({
         to: user.email,
         subject: "Reset your password",
         html: passwordResetTemplate(user.fullName, resetUrl),

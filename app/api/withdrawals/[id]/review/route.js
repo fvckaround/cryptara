@@ -68,7 +68,7 @@ export async function PATCH(request, { params }) {
       });
 
       if (withdrawingUser) {
-        sendEmail({
+        await sendEmail({
           to: withdrawingUser.email,
           subject: "Withdrawal not approved",
           html: withdrawalRejectedTemplate(
@@ -86,7 +86,7 @@ export async function PATCH(request, { params }) {
       });
 
       if (withdrawingUser) {
-        sendEmail({
+        await sendEmail({
           to: withdrawingUser.email,
           subject: "Withdrawal approved",
           html: withdrawalApprovedTemplate(

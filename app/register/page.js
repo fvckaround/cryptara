@@ -64,7 +64,7 @@ function RegisterForm() {
         return;
       }
 
-      router.push(`/verify-email?email=${encodeURIComponent(form.email)}`);
+      router.push("/dashboard");
     } catch (err) {
       setError("Something went wrong. Please try again.");
       setLoading(false);

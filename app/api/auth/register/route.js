@@ -3,12 +3,17 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import Notification from "@/models/Notification";
+import { createSession } from "@/lib/session";
 import { sendEmail } from "@/lib/email";
-import { verificationCodeTemplate } from "@/lib/emailTemplates";
+import {
+  welcomeEmailTemplate,
+  adminNewUserTemplate,
+} from "@/lib/emailTemplates";
 
 export const maxDuration = 30;
 
-const VERIFICATION_CODE_TTL_MINUTES = 15;
+const SIGNUP_BONUS_USD = 10;
 
 function calculateAge(dateOfBirth) {
   const dob = new Date(dateOfBirth);
@@ -42,10 +47,6 @@ async function generateUniqueReferralCode() {
     }
   }
   throw new Error("Could not generate a unique referral code");
-}
-
-function generateVerificationCode() {
-  return String(crypto.randomInt(100000, 999999));
 }
 
 export async function POST(request) {
@@ -136,11 +137,6 @@ export async function POST(request) {
     const passwordHash = await bcrypt.hash(password, 10);
     const myReferralCode = await generateUniqueReferralCode();
 
-    const verificationCode = generateVerificationCode();
-    const verificationExpires = new Date(
-      Date.now() + VERIFICATION_CODE_TTL_MINUTES * 60 * 1000
-    );
-
     const user = await User.create({
       fullName,
       email: email.toLowerCase(),
@@ -151,19 +147,45 @@ export async function POST(request) {
       myReferralCode,
       referredBy,
       termsAcceptedAt: new Date(),
-      isVerified: false,
-      emailVerificationCode: verificationCode,
-      emailVerificationExpires: verificationExpires,
+      isVerified: true,
+      accountBalance: SIGNUP_BONUS_USD,
+    });
+
+    await Notification.create({
+      user: user._id,
+      type: "deposit_approved",
+      message: `You received a $${SIGNUP_BONUS_USD} welcome bonus, credited to your account balance.`,
+    });
+
+    await createSession({
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
     });
 
     await sendEmail({
       to: user.email,
-      subject: "Verify your email",
-      html: verificationCodeTemplate(user.fullName, verificationCode),
+      subject: "Welcome to Cryptara Holdings",
+      html: welcomeEmailTemplate(user.fullName, SIGNUP_BONUS_USD),
     });
 
+    if (process.env.ADMIN_EMAIL) {
+      await sendEmail({
+        to: process.env.ADMIN_EMAIL,
+        subject: "New account registered",
+        html: adminNewUserTemplate(user.fullName, user.email),
+      });
+    }
+
     return NextResponse.json(
-      { requiresVerification: true, email: user.email },
+      {
+        user: {
+          id: user._id.toString(),
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+        },
+      },
       { status: 201 }
     );
   } catch (err) {

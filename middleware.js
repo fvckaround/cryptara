@@ -7,7 +7,6 @@ export const config = {
     "/admin/:path*",
     "/login",
     "/register",
-    "/verify-email",
     "/forgot-password",
     "/reset-password",
   ],
@@ -36,7 +35,6 @@ export async function middleware(request) {
   const isAuthPage =
     pathname === "/login" ||
     pathname === "/register" ||
-    pathname === "/verify-email" ||
     pathname === "/forgot-password" ||
     pathname === "/reset-password";
   const isProtectedPage = pathname.startsWith("/dashboard");
@@ -59,13 +57,11 @@ export async function middleware(request) {
     }
   }
 
-  // /verify-email, /forgot-password, and /reset-password stay
-  // reachable even when logged in — unlike /login and /register,
-  // which redirect an already-authenticated session to /dashboard.
+  // /forgot-password and /reset-password stay reachable even when
+  // logged in — unlike /login and /register, which redirect an
+  // already-authenticated session to /dashboard.
   const alwaysReachable =
-    pathname === "/verify-email" ||
-    pathname === "/forgot-password" ||
-    pathname === "/reset-password";
+    pathname === "/forgot-password" || pathname === "/reset-password";
 
   if (isAuthPage && session && !alwaysReachable) {
     return NextResponse.redirect(new URL("/dashboard", request.url));

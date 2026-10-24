@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Sparkline from "./Sparkline";
+import AutoScrollBox from "./AutoScrollBox";
 
 function formatPrice(price) {
   return `$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -55,7 +56,7 @@ export default function StockPrices() {
         </div>
       )}
 
-      <div className="max-h-[560px] overflow-y-auto border-t border-hairline">
+      <AutoScrollBox>
         <div className="sticky top-0 z-10 hidden grid-cols-[2fr_1.2fr_1fr_1.4fr] gap-4 border-b border-hairline bg-aubergine py-3 font-data text-[11px] uppercase tracking-wide text-mauve md:grid">
           <span>Company</span>
           <span className="text-right">Price</span>
@@ -108,7 +109,7 @@ export default function StockPrices() {
             </div>
           );
         })}
-      </div>
+      </AutoScrollBox>
     </div>
   );
 }

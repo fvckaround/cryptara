@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Sparkline from "./Sparkline";
+import AutoScrollBox from "./AutoScrollBox";
 
 function formatPrice(price) {
   if (price >= 1) {
@@ -72,7 +73,7 @@ export default function MarketPrices() {
         </div>
       )}
 
-      <div className="max-h-[560px] overflow-y-auto border-t border-hairline">
+      <AutoScrollBox>
         <div className="sticky top-0 z-10 hidden grid-cols-[2fr_1.2fr_1fr_1.4fr_1.2fr] gap-4 border-b border-hairline bg-aubergine py-3 font-data text-[11px] uppercase tracking-wide text-mauve md:grid">
           <span>Asset</span>
           <span className="text-right">Price</span>
@@ -134,7 +135,7 @@ export default function MarketPrices() {
             </div>
           );
         })}
-      </div>
+      </AutoScrollBox>
     </div>
   );
 }

@@ -12,6 +12,58 @@ export default function UsersTable() {
   const [balanceDirection, setBalanceDirection] = useState("add");
   const [balanceReason, setBalanceReason] = useState("");
   const [deletingId, setDeletingId] = useState(null);
+  const [referralsId, setReferralsId] = useState(null);
+  const [referralsData, setReferralsData] = useState(null);
+  const [referralsLoading, setReferralsLoading] = useState(false);
+  const [referralsError, setReferralsError] = useState("");
+
+  async function toggleReferrals(user) {
+    if (referralsId === user._id) {
+      setReferralsId(null);
+      return;
+    }
+
+    setReferralsId(user._id);
+    setReferralsData(null);
+    setReferralsError("");
+    setReferralsLoading(true);
+
+    try {
+      const res = await fetch(`/api/admin/users/${user._id}/referrals`);
+      const data = await res.json();
+      if (!res.ok) {
+        setReferralsError(data.error || "Could not load referrals");
+      } else {
+        setReferralsData(data);
+      }
+    } catch (err) {
+      setReferralsError("Could not load referrals");
+    }
+
+    setReferralsLoading(false);
+  }
+
+  function renderTree(nodes) {
+    return (
+      <ul className="mt-1 space-y-1 border-l border-hairline pl-4">
+        {nodes.map((n) => (
+          <li key={n.id}>
+            <div className="font-body text-sm text-warm-white">
+              {n.fullName}{" "}
+              <span className="font-data text-xs text-amber">
+                Level {n.level}
+              </span>
+            </div>
+            <div className="font-body text-xs text-mauve">
+              {n.email} · Joined{" "}
+              {new Date(n.joinedAt).toLocaleDateString("en-GB")}
+            </div>
+            {n.children.length > 0 && renderTree(n.children)}
+          </li>
+        ))}
+      </ul>
+    );
+  }
 
   async function load() {
     try {
@@ -228,6 +280,12 @@ export default function UsersTable() {
                     Adjust balance
                   </button>
                   <button
+                    onClick={() => toggleReferrals(u)}
+                    className="border border-hairline px-3 py-1.5 font-body text-xs text-warm-white transition-colors hover:border-amber"
+                  >
+                    {referralsId === u._id ? "Hide referrals" : "Referrals"}
+                  </button>
+                  <button
                     onClick={() => toggleFrozen(u)}
                     disabled={updatingId === u._id}
                     className={`border px-3 py-1.5 font-body text-xs transition-colors disabled:opacity-60 ${
@@ -256,6 +314,55 @@ export default function UsersTable() {
                   </button>
                 </div>
               </div>
+
+              {referralsId === u._id && (
+                <div className="mt-4 border border-hairline bg-plum-2 p-4">
+                  {referralsLoading && (
+                    <p className="font-body text-sm text-mauve">
+                      Loading referrals…
+                    </p>
+                  )}
+
+                  {referralsError && (
+                    <p className="font-body text-sm text-[#d9738f]">
+                      {referralsError}
+                    </p>
+                  )}
+
+                  {referralsData && (
+                    <div>
+                      <div className="font-body text-xs text-mauve">
+                        Referred by
+                      </div>
+                      <div className="mt-1 font-body text-sm text-warm-white">
+                        {referralsData.upline
+                          ? `${referralsData.upline.fullName} (${referralsData.upline.email})`
+                          : "Nobody — signed up directly"}
+                      </div>
+
+                      <div className="mt-4 font-body text-xs text-mauve">
+                        Downline · {referralsData.total}{" "}
+                        {referralsData.total === 1 ? "person" : "people"}
+                      </div>
+
+                      {referralsData.downline.length === 0 ? (
+                        <p className="mt-1 font-body text-sm text-mauve">
+                          No referrals yet.
+                        </p>
+                      ) : (
+                        renderTree(referralsData.downline)
+                      )}
+
+                      {referralsData.hasMoreLevels && (
+                        <p className="mt-3 font-body text-xs text-mauve">
+                          The chain continues beyond 5 levels. Open a
+                          person&apos;s own referrals to see further.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {balanceFormId === u._id && (
                 <div className="mt-4 flex flex-col gap-2 border border-hairline bg-plum-2 p-4 sm:flex-row sm:items-end">
